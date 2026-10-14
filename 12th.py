@@ -1,37 +1,54 @@
-def calc_avg(lst):
-    return sum(lst)/len(lst)
-    
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 
 data = pd.read_csv(
     "school_progress.csv",
     index_col="enrollment_id"
 )
 
-data["start_date"] = pd.to_datetime(data["start_date"])
-data["end_date"] = pd.to_datetime(data["end_date"])
 
-data["start_month"] = data["start_date"].dt.month
-data["start_weekday"] = data["start_date"].dt.dayofweek 
-data["course_duration_days"] = data["end_date"] - data["start_date"]
-
-ml_data = data[["grade", "course", "level", "lessons_completed", "total_lessons", "hours_spent", "attempts", "start_month", "start_weekday", "average_score"]]
-
-ml_data = ml_data[ml_data["average_score"].notna()]
-# LSP говорит что не может получить notna, но всё работает
-
-print(
-    ml_data.shape,
-    ml_data.dtypes,
-    # LSP говорит что не может получить dtypes, но всё работает
-    f"Пропусков: { ml_data.isna().sum().sum() }",
-    f"Пропусков в average_score: { ml_data["average_score"].isna().sum() }",
-    # LSP говорит что не может получить isna, но всё работает
-    ml_data[:5],
-    sep='\n',
+plt.figure(1) # сознаюсь, эту строчку я спросил у нейронки
+sns.histplot(
+    data=data,
+    x="average_score",
+    bins=10,
 )
+plt.title("распределение средних баллов")
+# основная масса проектов получила средний балл 60-80, очень мало проектов получили меньше 55, примерно столько же получило больше 90
+# вполне предсказуемое распределение
 
-data.to_csv("ml_data.csv", index=False)
+plt.figure(2)
+sns.barplot(
+    data=data,
+    x="level",
+    y="average_score",
+)
+plt.title("средние баллы(и их разброс) по уровням проектов")
+# тут видно что уровень проекта, не влияет на средний балл(почти)
 
+plt.figure(3)
+sns.scatterplot(
+    data=data,
+    x="hours_spent",
+    y="average_score",
+)
+plt.title("как связаны затраченое время и средние баллы")
+# тут есть небольшая зависимость между затраченым временем и минимальным средним баллом
+# по количеству точек(точнее по их плотности), весь график можно разделить на 3 группы:
+#   1. от 0 до 30 затраченых часов - много
+#   2. от 30 до 60 затраченых часов - достаточно
+#   3. от 60 до 80 затраченых часов - маловато
+# причём эти зоны сильно выделяются, то есть там не почти не сглажены границы, что может указывать на то что данные нереальные
 
-# LSP которая мне ложно говорит что нету isna, dtypes, notna и остальных, тратит гигабайт моей памяти, при этом она ещё работает через Node.js
+plt.figure(4)
+sns.lineplot(
+    data=data,
+    x="grade",
+    y="average_score",
+)
+plt.title("как меняется средний балл по мере увеличения оценки") # тут сложно нормально сформулировать название
+# тут они распределены не самым логичным образом, так что надеятся на оценочку повыше если ты просто потратил много времени не стоит
+
+plt.show()
